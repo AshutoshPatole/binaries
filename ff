@@ -1,0 +1,43 @@
+#!/bin/bash
+
+search_dir="/"
+
+skip_dirs=("node_modules" ".git" "site-packages")
+
+print_usage() {
+    echo "Usage: $0 [-r <directory>] <filename>"
+    echo "-r <directory>   Specify the starting directory for the search (defaults to current directory)"
+    echo "<filename>       Specify the file name or pattern to search for"
+    exit 1
+}
+
+while getopts ":r:" opt; do
+    case ${opt} in
+        r )
+            search_dir=$OPTARG
+            ;;
+        \? )
+            echo "Invalid option: $OPTARG" 1>&2
+            print_usage
+            ;;
+        : )
+            echo "Invalid option: $OPTARG requires an argument" 1>&2
+            print_usage
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
+if [ ! -d "$search_dir" ]; then
+    echo "Directory $search_dir does not exist" 1>&2
+    print_usage
+fi
+
+# Check if at least one argument (file name/pattern) is provided
+if [ $# -eq 0 ]; then
+    echo "Please provide a file name or pattern to search for" 1>&2
+    print_usage
+fi
+
+find "$search_dir" \( -path "*/${skip_dirs[0]}" $(printf -- '-o -path "*/%s" ' "${skip_dirs[@]:1}") \) -prune -o -type f -name "$1" -print 2>/dev/null
+

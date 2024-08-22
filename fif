@@ -1,0 +1,46 @@
+#!/bin/bash
+
+if [ "$#" -lt 2 ]; then
+    echo "Usage: $0 <search_pattern> <directory>"
+    exit 1
+fi
+
+search_pattern="$1"
+directory="$2"
+
+skip_directories=(
+    "node_modules"
+    ".git"
+    "target"
+    "dist"
+    "build"
+)
+
+if [ ! -d "$directory" ]; then
+    echo "Error: Directory '$directory' not found."
+    exit 1
+fi
+
+files=$(find "$directory" -type f)
+
+for file in $files
+do
+    skip=false
+    for skip_dir in "${skip_directories[@]}"
+    do
+        if [[ "$file" == *"/$skip_dir/"* ]]; then
+            skip=true
+            break
+        fi
+    done
+    if [ "$skip" = true ]; then
+        continue
+    fi
+
+    if grep -qE "$search_pattern" "$file" 2>/dev/null; then
+        echo "Found in file: $file"
+        grep -nE "$search_pattern" "$file" | sed 's/:/ : /'
+        echo "----------------------------------------------------------------------------------------------------"
+    fi
+done
+
